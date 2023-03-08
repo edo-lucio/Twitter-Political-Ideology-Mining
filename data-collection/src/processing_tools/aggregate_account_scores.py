@@ -37,8 +37,10 @@ def aggregate_accounts_scores(input_file, output_path, number_of_tweets=0, speci
         result_df.to_csv(path_or_buf=output_file, mode="a", header=None, index=None)
 
 if __name__ == "__main__":
-    input_files = ["data-collection\\data\\scores\\emfd-scoring\\UKLabour-regular", "data-collection\\data\\scores\\emfd-scoring\\Conservatives-regular"]
-    output_path = "data-collection\\data\\scores\\emfd-scoring\\aggregated" # e.g. data-collection//data//folder_
+    input_files = ["data-collection\\data\\scores\\frame-axis\\UKLabour-regular-frame-axis", 
+                   "data-collection\\data\\scores\\frame-axis\\Conservatives-regular-frame-axis"]
+    
+    output_path = "data-collection\\data\\scores\\frame-axis\\aggregated" # e.g. data-collection//data//folder_
 
     for file in input_files:
         aggregate_accounts_scores(file, output_path)
