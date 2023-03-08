@@ -1,0 +1,6 @@
+[submodule "Moral_Foundation_FrameAxis"]
+	path = Moral_Foundation_FrameAxis
+	url = https://github.com/edoardo-lucini/Moral_Foundation_FrameAxis
+[submodule "emfdscore"]
+	path = emfdscore
+	url = https://github.com/edoardo-lucini/emfdscore
