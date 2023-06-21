@@ -15,7 +15,7 @@ def collect_followers(accounts, number_of_followers=float("inf")):
     number_of_followers = float("inf") if "all" else number_of_followers 
 
     for account in accounts:
-        output_path = f"data\\users-list\\{account}-followers-list.csv"
+        output_path = f"data\\users-list\\raw\\{account}-followers-list.csv"
         threads.append(threading.Thread(target=writer.followers_writer, args=(account, number_of_followers, output_path, lock)))
 
     for t in threads:
@@ -25,7 +25,7 @@ def collect_followers(accounts, number_of_followers=float("inf")):
         t.join()
         
 if __name__ == "__main__":
-    accounts = ["UKLabour", "Conservatives"]
+    accounts = ["ClientEarth", "EnergySvgTrust", "thecarbontrust", "TheCCoalition"]
     number_of_followers = "all"
 
     collect_followers(accounts, number_of_followers)

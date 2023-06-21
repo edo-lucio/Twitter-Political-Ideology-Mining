@@ -354,8 +354,8 @@ class TwitterAPIV2(Tokenizer):
     def get_mention_timeline(self, id, number_of_mentions=float("inf")):
         url = "https://api.twitter.com/2/users/{}/mentions".format(id)
         params = {
-            "tweet.fields": "created_at",
-            "max_results": 100
+            "tweet.fields": "created_at,author_id",
+            "max_results": 100, 
             }
         
         headers = {
@@ -384,6 +384,7 @@ class TwitterAPIV2(Tokenizer):
                 yield mentions
 
             except Exception as e:
+
                 # rate limit error: switch bearer token
                 if str(e.status_code) == "429":
                     print(f"HTTP ERROR {e.status_code}: {e.text}")
@@ -392,7 +393,6 @@ class TwitterAPIV2(Tokenizer):
 
 # accounts = pd.read_csv("data_collection/data/users/UKLabour-followers-list.csv",  header=None)
 api = TwitterAPI("AAAAAAAAAAAAAAAAAAAAAIlmlAEAAAAANxYXGRxIQUdG%2Bvm5QSIkBcBjjhY%3Dy7i34oggfw6Jz8X5D85FvyGxFJbY21Ff21K81f4u71vrr50BuI")
-
 # async def test():
 #     i = await api.show_users([307423967])
 #     print(i[0]["statuses_count"])
@@ -411,18 +411,29 @@ api = TwitterAPI("AAAAAAAAAAAAAAAAAAAAAIlmlAEAAAAANxYXGRxIQUdG%2Bvm5QSIkBcBjjhY%
 
 ########################################################################
 
-# async def test():
-#     user_id = "HuertDeAuteuil"
-#     tweet_id = "1624515491724161025"
+def testV1():
+    user_id = "1872495530"
 
-#     result = await api.get_tweet_info(user_id, tweet_id)
-#     print(result)
+    for tweets in api.new_get_tweets(user_id):
+        print(tweets[0])
 
-#     for r in result["statuses"]: 
-#         if r["in_reply_to_status_id_str"] == tweet_id:
-#             print(r["full_text"])
+# testV1()
 
-    
-# loop.run_until_complete(test())
+
+api_v2 = TwitterAPIV2("AAAAAAAAAAAAAAAAAAAAAIlmlAEAAAAANxYXGRxIQUdG%2Bvm5QSIkBcBjjhY%3Dy7i34oggfw6Jz8X5D85FvyGxFJbY21Ff21K81f4u71vrr50BuI")
+
+def testV2():
+    user_id = "1872495530"
+    number_of_mentions = 0
+
+    for mentions in api_v2.get_mention_timeline(user_id):
+        number_of_mentions += len(mentions)
+        print(mentions[0]["text"])
+
+    print(number_of_mentions)
+        
+
+# testV2()
+
 
 

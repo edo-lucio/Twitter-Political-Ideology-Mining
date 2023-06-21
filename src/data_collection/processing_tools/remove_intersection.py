@@ -29,8 +29,8 @@ def remove_intersections(input_files):
 
 if __name__ == "__main__":
     # paths of the two csv to remove intersections from
-    path_1 = "data\\users-list\\UKLabour-followers-list.csv"
-    path_2 = "data\\users-list\\Conservatives-followers-list.csv"
+    path_1 = "data\\users-list\\raw\\tradbritgroup-followers-list.csv"
+    path_2 = "data\\users-list\\raw\\hopenothate-followers-list.csv"
 
     paths = (path_1, path_2)
     remove_intersections(paths) # will store the new sets into data-collection//data//users-list//no-intersection-pairs

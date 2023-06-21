@@ -24,7 +24,7 @@ lock = threading.Lock()
 # constant thread count to use to write tweets
 THREAD_COUNT = 40
 
-def collect_tweets(input_paths, min_tweets=float("inf"), conditions=None, specifics='regular', tweets_per_account=float("inf")):
+def collect_tweets(input_files, min_tweets=float("inf"), conditions=None, specifics='regular', tweets_per_account=float("inf")):
     '''
     Collect tweets from a list of account ids and write them into a csv file.
     Uses 
@@ -51,14 +51,12 @@ def collect_tweets(input_paths, min_tweets=float("inf"), conditions=None, specif
 
     threads = []
 
-    for path in input_paths:
+    for input_file in input_files:
 
         # create output file name        
-        file_name = path.split("\\")[-1].split(".")[0].split("-")[0]
+        file_name = input_file.split("\\")[-1].split(".")[0].split("-")[0]
         output_name = f"data\\tweets\\{file_name}-{specifics}.csv"
 
-        # find input_file (followers) and create output_file (tweets)
-        input_file = f"data\\{path}.csv"
         output_file = open(output_name, "a", encoding="utf-8")
 
         # write file header
@@ -83,14 +81,14 @@ def collect_tweets(input_paths, min_tweets=float("inf"), conditions=None, specif
         t.join()    
 
 if __name__ == "__main__":
-    user_lists_paths = ["users-list\\no-intersection-pairs\\UKLabour-Conservatives\\UKLabour-followers-list", # NOTE: search into no-intersection-pairs
-                        "users-list\\no-intersection-pairs\\UKLabour-Conservatives\\Conservatives-followers-list"]
+    user_lists_paths = ["data\\users-list\\raw\\internal-act-users.csv",
+                        "data\\users-list\\raw\\external-act-users.csv"] # NOTE: search into no-intersection-pairs
     
     # set condition
     # conditions = [Conditions("user.followers_count", operator.lt, 40, True)]
 
     start = time.time()
-    collect_tweets(user_lists_paths)
+    collect_tweets(user_lists_paths, 4000000)
     end = time.time()
 
     print("Running time: ", end - start)

@@ -1,7 +1,26 @@
 # from processing_tools.tools import aggregate_accounts_scores
 import pandas as pd
 
-def aggregate_accounts_scores(input_file, output_path, number_of_tweets=0, specifics=None):
+def stratify(tweets_df):
+    # Create a new column with tweet counts per user
+    tweet_counts = tweets_df.groupby('user_id').size()
+    tweets_df['tweet_count'] = tweets_df['user_id'].map(tweet_counts)
+
+    # Define the tweet count ranges for stratified sampling
+    ranges = [(1, 100), (100, 500), (500, 1500), (1500, float('inf'))]
+
+    # Create a new column with the tweet count range for each user
+    tweets_df['tweet_count_range'] = pd.cut(tweets_df['tweet_count'], 
+                                            bins=[r[0] for r in ranges] + [float('inf')], 
+                                            labels=[i for i in range(len(ranges))])
+    
+    
+    
+    tweets_df['tweet_count_range'] = pd.to_numeric(tweets_df['tweet_count_range'], errors='coerce')
+    
+    return tweets_df
+
+def aggregate_accounts_scores(input_file, output_path):
     ''' create a new csv file with mf scores means for each account '''
 
     print(f"Aggregating {input_file}")
@@ -10,37 +29,20 @@ def aggregate_accounts_scores(input_file, output_path, number_of_tweets=0, speci
     input_file = f"{input_file}.csv" # ! REMOVE /TESTING/
     output_file = f"{output_path}\\{name}-aggregated.csv" # ! REMOVE /TESTING/
 
-    original_df = pd.read_csv(input_file, on_bad_lines='skip', encoding='utf-8')
-    columns = list(original_df.columns)
+    df = pd.read_csv(input_file, on_bad_lines='skip', encoding='utf-8', low_memory=False)
+    df = stratify(df)
 
-    user_ids = set()
-    ids_list = original_df["user_id"].to_list()
+    grouped_df = df.groupby(['user_id']).mean(numeric_only=True)
+    grouped_df = grouped_df.reset_index()
+    print(grouped_df.head())
 
-    for id in ids_list:
-        user_ids.add(id)
-
-    result_df = pd.DataFrame(columns=columns)
-    result_df.to_csv(path_or_buf=output_file, index=None)
-
-    for user_id in list(user_ids):
-        # select rows that matches the user id
-        user_data  = original_df.loc[original_df["user_id"] == user_id]
-        if len(user_data) < number_of_tweets: continue
-
-        # select the scores and take the row mean
-        user_scores = user_data.loc[:, user_data.columns != 'user_id']
-        score_means = list(user_scores.mean(axis=0))
-
-        user_data = [user_id] + score_means
-        result_df = pd.DataFrame(columns=columns, data=[user_data])
-
-        result_df.to_csv(path_or_buf=output_file, mode="a", header=None, index=None)
+    grouped_df.to_csv(path_or_buf=output_file, index=None)
 
 if __name__ == "__main__":
-    input_files = ["data\\scores\\frame-axis\\UKLabour-regular-frame-axis", 
-                   "data\\scores\\frame-axis\\Conservatives-regular-frame-axis"]
+    input_files = ["data\\scores\\frame-axis\\raw\\LeaveEUOfficial-regular-frame-axis",
+                   "data\\scores\\frame-axis\\raw\\BestForBritain-regular-frame-axis"]
     
-    output_path = "data\\scores\\test\\" # e.g. data-collection//data//folder_
+    output_path = "data\\scores\\frame-axis\\aggregated" # e.g. data-collection//data//folder_
 
     for file in input_files:
         aggregate_accounts_scores(file, output_path)
