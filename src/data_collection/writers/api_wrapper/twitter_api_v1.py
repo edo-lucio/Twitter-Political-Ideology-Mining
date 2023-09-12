@@ -6,9 +6,11 @@ import time
 
 loop = asyncio.get_event_loop()
 
+
 class Tokenizer:
     def __init__(self, bearer_tokens_raw):
-        self.bearer_tokens = [bearer for bearer in bearer_tokens_raw.split(".")]
+        self.bearer_tokens = [
+            bearer for bearer in bearer_tokens_raw.split(".")]
         self.bearer_index = 0
         self.bearer_token = self.bearer_tokens[self.bearer_index]
 
@@ -21,15 +23,16 @@ class Tokenizer:
             self.bearer_token = self.bearer_tokens[self.bearer_index]
 
         headers = {
-            "Authorization": "Bearer {}".format(self.bearer_token)  
-            }
-        
+            "Authorization": "Bearer {}".format(self.bearer_token)
+        }
+
         return headers
+
 
 class TwitterAPI(Tokenizer):
     def __init__(self, bearer_tokens_raw):
         super().__init__(bearer_tokens_raw)
-    
+
     def _set_rules(self, rules):
         # You can adjust the rules if needed
 
@@ -37,7 +40,7 @@ class TwitterAPI(Tokenizer):
             payload = {"add": rules}
             response = requests.post(
                 "https://api.twitter.com/2/tweets/search/stream/rules",
-                auth= self.bearer_token,
+                auth=self.bearer_token,
                 json=payload,
             )
             print(json.dumps(response.json()))
@@ -49,12 +52,12 @@ class TwitterAPI(Tokenizer):
         if rules is None or "data" not in rules:
             return None
 
-        try: 
+        try:
             ids = list(map(lambda rule: rule["id"], rules["data"]))
             payload = {"delete": {"ids": ids}}
             response = requests.post(
                 "https://api.twitter.com/2/tweets/search/stream/rules",
-                auth= self.bearer_token,
+                auth=self.bearer_token,
                 json=payload
             )
 
@@ -62,12 +65,13 @@ class TwitterAPI(Tokenizer):
 
         except Exception as e:
             print("Cannot delete rules (HTTP {}): {}".format(
-                    e.status_code, e.text
-                ))
+                e.status_code, e.text
+            ))
 
     def _get_rules(self):
-        try: 
-            response = requests.get("https://api.twitter.com/2/tweets/search/stream/rules", auth=self.bearer_token)
+        try:
+            response = requests.get(
+                "https://api.twitter.com/2/tweets/search/stream/rules", auth=self.bearer_token)
             print(json.dumps(response.json()))
             return response.json()
 
@@ -90,13 +94,13 @@ class TwitterAPI(Tokenizer):
         rules = self._get_rules()
         delete = self._delete_rules(rules)
         new_rules = self._build_value_string(ids)
-        
+
         self._set_rules([{"value": new_rules}])
         url = "https://api.twitter.com/2/tweets/search/stream"
 
         # Start streaming
 
-        try: 
+        try:
             response = requests.get(url, headers=headers, stream=True)
 
             # Iterate over tweets in the stream
@@ -105,7 +109,7 @@ class TwitterAPI(Tokenizer):
                     print(r)
 
         except Exception as e:
-            if(e.status_code == 401 or e.status_code == 429):
+            if (e.status_code == 401 or e.status_code == 429):
                 if self.bearer_index == len(self.bearer_tokens) - 1:
                     self.bearer_index = 0
                     return self.stream_users_tweets(self, ids)
@@ -115,27 +119,27 @@ class TwitterAPI(Tokenizer):
 
     # get tweets from id
     async def get_tweets(self, id, number_of_tweets=("inf")):
-        try: 
+        try:
             max_id = None
 
             url = "https://api.twitter.com/1.1/statuses/user_timeline.json"
             params = {
-                "user_id": id, 
+                "user_id": id,
                 "count": 200,
-                "exclude_replies": False, 
+                "exclude_replies": False,
                 "include_rts": False,
                 "max_id": max_id,
                 "tweet_mode": "extended"
             }
-            
+
             headers = {
-            "Authorization": "Bearer {}".format(self.bearer_token)  
+                "Authorization": "Bearer {}".format(self.bearer_token)
             }
 
             # response = requests.get(url, params=params, headers=headers)
             response = await loop.run_in_executor(None, partial(requests.get, url, headers=headers, params=params))
 
-            if(response.status_code != 200):
+            if (response.status_code != 200):
                 raise Exception(response.status_code)
 
             tweets = response.json()
@@ -166,27 +170,29 @@ class TwitterAPI(Tokenizer):
 
         url = "https://api.twitter.com/1.1/followers/ids.json"
         params = {
-            "screen_name": account, 
-            "count": 5000,  
+            "screen_name": account,
+            "count": 5000,
             "cursor": cursor
         }
 
         headers = {
-        "Authorization": "Bearer {}".format(self.bearer_token)  
+            "Authorization": "Bearer {}".format(self.bearer_token)
         }
 
         results_followers = []
 
         while cursor:
             try:
-                if len(results_followers) >= number_of_followers: break
-                
+                if len(results_followers) >= number_of_followers:
+                    break
+
                 # start the requests
                 # response = await loop.run_in_executor(None, partial(requests.get, url, headers=headers, params=params))
-                response = requests.get(url=url, params=params, headers=headers)
+                response = requests.get(
+                    url=url, params=params, headers=headers)
 
                 # if response has gone wrong throw status code exception
-                if(response.status_code != 200):
+                if (response.status_code != 200):
                     raise Exception(response.status_code)
 
                 # parse the response
@@ -195,14 +201,14 @@ class TwitterAPI(Tokenizer):
                 results_followers += followers_ids
 
                 print("Followers gathered", len(results_followers), account)
-                
+
                 # switch to next cursor
                 cursor = response["next_cursor"]
                 params["cursor"] = cursor
                 print(cursor)
 
                 # return results
-                yield followers_ids 
+                yield followers_ids
 
             except Exception as e:
                 # rate limit error: switch bearer token
@@ -212,16 +218,16 @@ class TwitterAPI(Tokenizer):
                     time.sleep(8)
 
     def show_users(self, ids):
-        try: 
+        try:
             url = "https://api.twitter.com/1.1/users/lookup.json"
             params = {
                 "user_id": ids,
-                }
-            
-            headers = {
-                "Authorization": "Bearer {}".format(self.bearer_token)  
             }
-            
+
+            headers = {
+                "Authorization": "Bearer {}".format(self.bearer_token)
+            }
+
             response = requests.post(url, headers=headers, data=params)
 
             informations = response.json()
@@ -240,43 +246,46 @@ class TwitterAPI(Tokenizer):
                 print(f"HTTP ERROR {e}: too many requests")
                 headers = self._change_header()
                 time.sleep(8)
-    
+
     # get tweets from id
     def new_get_tweets(self, id, number_of_tweets=float("inf")):
         url = "https://api.twitter.com/1.1/statuses/user_timeline.json"
         params = {
-            "user_id": id, 
+            "user_id": id,
             "count": 200,
-            "exclude_replies": False, 
+            "exclude_replies": False,
             "include_rts": False,
             "max_id": None,
             "tweet_mode": "extended"
         }
 
         headers = {
-            "Authorization": "Bearer {}".format(self.bearer_token)  
+            "Authorization": "Bearer {}".format(self.bearer_token)
         }
-            
+
         max_id = True
         counter = 0
 
         while max_id:
-            try: 
-                if counter >= number_of_tweets: break
+            try:
+                if counter >= number_of_tweets:
+                    break
 
                 # get tweets request
                 # response = await loop.run_in_executor(None, partial(requests.get, url, headers=headers, params=params))
-                response = requests.get(url=url, headers=headers, params=params)
+                response = requests.get(
+                    url=url, headers=headers, params=params)
 
                 # throw exception if response returns an http error
                 if response.status_code != 200:
                     raise Exception(response.status_code)
-                
+
                 # parse the response
                 tweets = response.json()
 
                 # if no tweets are retrieved return
-                if len(tweets) == 0: break
+                if len(tweets) == 0:
+                    break
 
                 # update counter
                 counter += len(tweets)
@@ -287,7 +296,7 @@ class TwitterAPI(Tokenizer):
                 # if new pagination token id is the same as last one return
                 if params["max_id"] == max_id:
                     return
-                
+
                 time.sleep(0.8)
 
                 # return the results
@@ -306,26 +315,26 @@ class TwitterAPI(Tokenizer):
                     print(f"HTTP ERROR {e}: too many requests")
                     headers = self._change_header()
                     time.sleep(8)
-                
+
     async def get_tweet_info(self, account_name, tweet_id):
-        try: 
+        try:
             url = "https://api.twitter.com/1.1/search/tweets.json"
 
             params = {
                 "q": [f"to:{account_name}", f"sinceId: {tweet_id}"],
                 "count": 100,
-                "tweet_mode":"extended",
+                "tweet_mode": "extended",
                 "exclude_replies": False
             }
-            
+
             headers = {
-            "Authorization": "Bearer {}".format(self.bearer_token)  
+                "Authorization": "Bearer {}".format(self.bearer_token)
             }
 
             # response = requests.get(url, params=params, headers=headers)
             response = await loop.run_in_executor(None, partial(requests.get, url, headers=headers, params=params))
 
-            if(response.status_code != 200):
+            if (response.status_code != 200):
                 raise Exception(response.status_code)
 
             tweets = response.json()
@@ -347,27 +356,29 @@ class TwitterAPI(Tokenizer):
                 self.bearer_token = self.bearer_tokens[self.bearer_index]
                 await self.get_tweets(id, max_id=None)
 
+
 class TwitterAPIV2(Tokenizer):
     def __init__(self, bearer_tokens_raw):
         super().__init__(bearer_tokens_raw)
-        
+
     def get_mention_timeline(self, id, number_of_mentions=float("inf")):
         url = "https://api.twitter.com/2/users/{}/mentions".format(id)
         params = {
             "tweet.fields": "created_at,author_id",
-            "max_results": 100, 
-            }
-        
+            "max_results": 100,
+        }
+
         headers = {
-            "Authorization": "Bearer {}".format(self.bearer_token)  
-            }
-        
+            "Authorization": "Bearer {}".format(self.bearer_token)
+        }
+
         pagination_token = True
         counter = 0
 
         while pagination_token:
-            try: 
-                if counter >= number_of_mentions: break
+            try:
+                if counter >= number_of_mentions:
+                    break
                 response = requests.get(url, headers=headers, params=params)
 
                 if response.status_code != 200:
@@ -376,10 +387,11 @@ class TwitterAPIV2(Tokenizer):
                 response_json = response.json()
 
                 # set pagination token for next request if any
-                pagination_token = response_json["meta"]["next_token"] if "next_token" in response_json["meta"].keys() else None
+                pagination_token = response_json["meta"]["next_token"] if "next_token" in response_json["meta"].keys(
+                ) else None
                 params["pagination_token"] = pagination_token
 
-                # access data 
+                # access data
                 mentions = response_json["data"]
                 yield mentions
 
@@ -391,8 +403,10 @@ class TwitterAPIV2(Tokenizer):
                     headers = self._change_header()
                     time.sleep(8)
 
+
 # accounts = pd.read_csv("data_collection/data/users/UKLabour-followers-list.csv",  header=None)
-api = TwitterAPI("AAAAAAAAAAAAAAAAAAAAAIlmlAEAAAAANxYXGRxIQUdG%2Bvm5QSIkBcBjjhY%3Dy7i34oggfw6Jz8X5D85FvyGxFJbY21Ff21K81f4u71vrr50BuI")
+api = TwitterAPI(
+    "AAAAAAAAAAAAAAAAAAAAAIlmlAEAAAAANxYXGRxIQUdG%2Bvm5QSIkBcBjjhY%3Dy7i34oggfw6Jz8X5D85FvyGxFJbY21Ff21K81f4u71vrr50BuI")
 # async def test():
 #     i = await api.show_users([307423967])
 #     print(i[0]["statuses_count"])
@@ -401,7 +415,7 @@ api = TwitterAPI("AAAAAAAAAAAAAAAAAAAAAIlmlAEAAAAANxYXGRxIQUdG%2Bvm5QSIkBcBjjhY%
 
 #     async for tweets in api.new_get_tweets(307423967):
 #         result_tweets += tweets
-    
+
 #     for tweet in result_tweets:
 #         print(tweet["full_text"])
 
@@ -410,6 +424,7 @@ api = TwitterAPI("AAAAAAAAAAAAAAAAAAAAAIlmlAEAAAAANxYXGRxIQUdG%2Bvm5QSIkBcBjjhY%
 # loop.run_until_complete(test())
 
 ########################################################################
+
 
 def testV1():
     user_id = "1872495530"
@@ -420,7 +435,9 @@ def testV1():
 # testV1()
 
 
-api_v2 = TwitterAPIV2("AAAAAAAAAAAAAAAAAAAAAIlmlAEAAAAANxYXGRxIQUdG%2Bvm5QSIkBcBjjhY%3Dy7i34oggfw6Jz8X5D85FvyGxFJbY21Ff21K81f4u71vrr50BuI")
+api_v2 = TwitterAPIV2(
+    "AAAAAAAAAAAAAAAAAAAAAIlmlAEAAAAANxYXGRxIQUdG%2Bvm5QSIkBcBjjhY%3Dy7i34oggfw6Jz8X5D85FvyGxFJbY21Ff21K81f4u71vrr50BuI")
+
 
 def testV2():
     user_id = "1872495530"
@@ -431,9 +448,6 @@ def testV2():
         print(mentions[0]["text"])
 
     print(number_of_mentions)
-        
+
 
 # testV2()
-
-
-

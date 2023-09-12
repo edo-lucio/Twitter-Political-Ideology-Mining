@@ -24,6 +24,7 @@ lock = threading.Lock()
 # constant thread count to use to write tweets
 THREAD_COUNT = 40
 
+
 def collect_tweets(input_files, min_tweets=float("inf"), conditions=None, specifics='regular', tweets_per_account=float("inf")):
     '''
     Collect tweets from a list of account ids and write them into a csv file.
@@ -44,7 +45,7 @@ def collect_tweets(input_files, min_tweets=float("inf"), conditions=None, specif
         Function that returns a boolean value if the inner condition is met.
         Conditions from condition.py module will check whether tweets met a 
         specific condition.
-        
+
         * *condition_value* (``any``) --
           Value to compare the entry data to inside the condition
     '''
@@ -53,7 +54,7 @@ def collect_tweets(input_files, min_tweets=float("inf"), conditions=None, specif
 
     for input_file in input_files:
 
-        # create output file name        
+        # create output file name
         file_name = input_file.split("\\")[-1].split(".")[0].split("-")[0]
         output_name = f"data\\tweets\\{file_name}-{specifics}.csv"
 
@@ -69,21 +70,24 @@ def collect_tweets(input_files, min_tweets=float("inf"), conditions=None, specif
 
         # divide followers list into chunks
         chunk_size = len(account_ids) // THREAD_COUNT
-        chunks = [account_ids[i:i+chunk_size] for i in range(0, len(account_ids), chunk_size)]
+        chunks = [account_ids[i:i+chunk_size]
+                  for i in range(0, len(account_ids), chunk_size)]
 
-        # add a thread for each chunk for each  
-        threads += [threading.Thread(target=writer.tweets_writer, args=(output_name, chunk, min_tweets, conditions, tweets_per_account, lock)) for chunk in chunks]
-    
+        # add a thread for each chunk for each
+        threads += [threading.Thread(target=writer.tweets_writer, args=(
+            output_name, chunk, min_tweets, conditions, tweets_per_account, lock)) for chunk in chunks]
+
     for t in threads:
         t.start()
 
     for t in threads:
-        t.join()    
+        t.join()
+
 
 if __name__ == "__main__":
-    user_lists_paths = ["data\\users-list\\raw\\internal-act-users.csv",
-                        "data\\users-list\\raw\\external-act-users.csv"] # NOTE: search into no-intersection-pairs
-    
+    user_lists_paths = ["data\\users-list\\raw\\l-users.csv",
+                        "data\\users-list\\raw\\r-users.csv"]
+
     # set condition
     # conditions = [Conditions("user.followers_count", operator.lt, 40, True)]
 
@@ -92,16 +96,3 @@ if __name__ == "__main__":
     end = time.time()
 
     print("Running time: ", end - start)
-
-
-
-
-
-
-
-
-
-
-
-
-
