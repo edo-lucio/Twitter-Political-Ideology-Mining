@@ -1,3 +1,3 @@
-## Using Moral Foundation's to predict activism engagement
+## Mining Political Ideology: A Classification Approach through Moral Foundation Analysis 
 
-In this research we
+
